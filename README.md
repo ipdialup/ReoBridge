@@ -1,5 +1,7 @@
 # ReoBridge
 
+[![build](https://github.com/ipdialup/ReoBridge/actions/workflows/build.yml/badge.svg)](https://github.com/ipdialup/ReoBridge/actions/workflows/build.yml)
+
 ReoBridge makes Reolink cameras that only speak Reolink's own protocol (the battery and
 Wi-Fi "solo" models such as the E1, Argus and Lumus) show up as ordinary **RTSP** streams. You can
 then record them in Blue Iris, Frigate, Home Assistant, VLC, ffmpeg or any NVR.
@@ -30,6 +32,12 @@ then serve nothing. ReoBridge was written from scratch to be dependable for an a
   - H.264 and H.265 video, with AAC audio.
 - **Status page.** `http://host:8555/` shows each camera, its frame rate, bitrate and
   viewers. `/status` returns the same as JSON.
+- **ONVIF and pan/tilt.** Each camera can have its own ONVIF service, so an NVR finds its
+  streams and drives pan/tilt and presets. Mounting can be inverted, and each press can be
+  limited to a fixed step.
+- **Several cameras.** One ReoBridge serves as many cameras as you list.
+- **Tray app for Windows.** It shows at a glance whether every camera is streaming, and it can
+  edit the cameras and restart the service.
 - **Saves the camera's link.** The main stream can stay on all the time. The sub stream is
   pulled only while someone is watching it.
 
