@@ -192,7 +192,7 @@ public sealed class TrayApp : ApplicationContext
             StartPosition = FormStartPosition.CenterScreen, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(12),
         };
         var layout = new TableLayoutPanel { AutoSize = true, ColumnCount = 1, Dock = DockStyle.Fill };
-        layout.Controls.Add(new Label { Text = "Status address of the machine running ReoBridge\n(e.g. 192.168.0.6 or http://nvr:8555/):", AutoSize = true });
+        layout.Controls.Add(new Label { Text = "Status address of the machine running ReoBridge\n(e.g. 192.168.1.10 or http://nvr:8555/):", AutoSize = true });
         var box = new TextBox { Text = _settings.StatusUrl, Width = 340 };
         layout.Controls.Add(box);
         var buttons = new FlowLayoutPanel { FlowDirection = FlowDirection.RightToLeft, AutoSize = true, Dock = DockStyle.Fill };

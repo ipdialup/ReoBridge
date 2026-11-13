@@ -162,7 +162,7 @@ public class RtspTests
     [Fact]
     public void Path_StripsHostQueryAndSlashes()
     {
-        var r = new RtspRequest { Method = "SETUP", Uri = "rtsp://192.168.0.6:8554/Indoor/main/trackID=0?x=1" };
+        var r = new RtspRequest { Method = "SETUP", Uri = "rtsp://192.168.1.10:8554/Indoor/main/trackID=0?x=1" };
         Assert.Equal("Indoor/main/trackID=0", r.Path);
     }
 
