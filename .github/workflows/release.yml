@@ -1,0 +1,45 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet test -c Release
+      - name: Build packages
+        shell: pwsh
+        run: |
+          $v = '${{ github.ref_name }}'
+          $common = '-c', 'Release', '--self-contained', '-p:PublishSingleFile=true', "-p:Version=$($v.TrimStart('v'))"
+          New-Item -ItemType Directory dist | Out-Null
+
+          # Windows: service, tray, install script, example config
+          dotnet publish src/ReoBridge -r win-x64 @common -o pkg/win/publish
+          dotnet publish src/ReoBridge.Tray -r win-x64 @common -p:EnableCompressionInSingleFile=true -o pkg/win/publish
+          Copy-Item scripts -Destination pkg/win/scripts -Recurse
+          Copy-Item reobridge.example.json, README.md, LICENSE pkg/win/
+          Remove-Item pkg/win/publish/*.pdb -ErrorAction SilentlyContinue
+          Compress-Archive pkg/win/* "dist/ReoBridge-$v-win-x64.zip"
+
+          foreach ($rid in 'linux-x64', 'linux-arm64') {
+            dotnet publish src/ReoBridge -r $rid @common -o "pkg/$rid"
+            Copy-Item reobridge.example.json, README.md, LICENSE "pkg/$rid/"
+            Remove-Item "pkg/$rid/*.pdb" -ErrorAction SilentlyContinue
+            tar -czf "dist/ReoBridge-$v-$rid.tar.gz" -C "pkg/$rid" .
+          }
+          Get-ChildItem dist
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: gh release create '${{ github.ref_name }}' dist/* --title "ReoBridge ${{ github.ref_name }}" --notes-file .github/release-notes.md

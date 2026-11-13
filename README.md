@@ -52,7 +52,7 @@ These are the same paths Neolink uses, so an existing NVR setup keeps working.
 
 ## Install on Windows
 
-1. Download a release, or build it yourself:
+1. Download the `win-x64` zip from [Releases](https://github.com/ipdialup/ReoBridge/releases) and unzip it, or build it yourself:
    `dotnet publish src/ReoBridge -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o publish`
 2. In an elevated PowerShell, run `scripts\install-windows.ps1 -Source .\publish`.
 3. Edit `C:\ProgramData\ReoBridge\reobridge.json` (see below), then run the script again.
@@ -61,7 +61,7 @@ Logs go to `C:\ProgramData\ReoBridge\logs`.
 
 ## Install on Linux
 
-1. Publish for `linux-x64` or `linux-arm64`.
+1. Download the `linux-x64` or `linux-arm64` archive from [Releases](https://github.com/ipdialup/ReoBridge/releases), or publish it yourself.
 2. Copy the output to `/opt/reobridge`.
 3. Put your config at `/etc/reobridge.json`.
 4. Create a systemd unit:
