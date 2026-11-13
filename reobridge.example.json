@@ -1,0 +1,23 @@
+{
+  "ReoBridge": {
+    "Rtsp": {
+      "Bind": "0.0.0.0",
+      "Port": 8554,
+      "Users": [
+        { "Name": "viewer", "Password": "change-me" }
+      ]
+    },
+    "StatusPort": 8555,
+    "Cameras": [
+      {
+        "Name": "Indoor",
+        "Host": "192.168.1.50",
+        "Port": 9000,
+        "Username": "admin",
+        "Password": "camera-password",
+        "MainStream": "always",
+        "SubStream": "ondemand"
+      }
+    ]
+  }
+}
