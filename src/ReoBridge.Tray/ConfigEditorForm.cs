@@ -125,6 +125,8 @@ public sealed class ConfigEditorForm : Form
         var save = new Button { Text = "Save and restart", AutoSize = true };
         var cancel = new Button { Text = "Cancel", AutoSize = true, DialogResult = DialogResult.Cancel };
         save.Click += (_, _) => SaveAndRestart();
+        // The editor runs as the main window (Application.Run), not ShowDialog, so DialogResult alone does not close it.
+        cancel.Click += (_, _) => Close();
         bottom.Controls.AddRange([cancel, save]);
         CancelButton = cancel;
 
