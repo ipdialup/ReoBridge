@@ -61,7 +61,7 @@ public sealed class CameraWorker
             {
                 LastError = ex.Message;
                 State = "login refused";
-                _log.LogError("{Camera}: login refused ({Error}); retrying in 60 s", Name, ex.Message);
+                _log.LogError("login refused ({Error}); retrying in 60 s", ex.Message);
                 wait = TimeSpan.FromSeconds(60);
             }
             catch (Exception ex)
@@ -69,7 +69,7 @@ public sealed class CameraWorker
                 LastError = ex.Message;
                 State = "disconnected";
                 wait = Backoff[Math.Min(attempt++, Backoff.Length - 1)];
-                _log.LogWarning("{Camera}: {Error}; reconnecting in {Wait} s", Name, ex.Message, wait.TotalSeconds);
+                _log.LogWarning("{Error}; reconnecting in {Wait} s", ex.Message, wait.TotalSeconds);
             }
             finally
             {
@@ -92,7 +92,7 @@ public sealed class CameraWorker
         ConnectedSinceUtc = DateTime.UtcNow;
         State = "connected";
         LastError = null;
-        _log.LogInformation("{Camera}: logged in to {Host} ({Encryption})", Name, _opt.Host, client.Encryption);
+        _log.LogInformation("logged in to {Host} ({Encryption})", _opt.Host, client.Encryption);
 
         using var sessionCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         var sct = sessionCts.Token;
@@ -112,11 +112,11 @@ public sealed class CameraWorker
                         slot.Stream = await client.StartVideoAsync(slot.Path.IsSub, sct);
                         slot.StartedUtc = DateTime.UtcNow;
                         slot.Pump = PumpAsync(slot, slot.Stream, sct);
-                        _log.LogInformation("{Camera}: started {Stream} stream", Name, slot.Path.Stream);
+                        _log.LogInformation("started {Stream} stream", slot.Path.Stream);
                     }
                     else if (!want && slot.Stream is not null)
                     {
-                        _log.LogInformation("{Camera}: stopping {Stream} stream (no viewers)", Name, slot.Path.Stream);
+                        _log.LogInformation("stopping {Stream} stream (no viewers)", slot.Path.Stream);
                         await StopSlotAsync(client, slot, sct);
                     }
 
@@ -190,7 +190,7 @@ public sealed class CameraWorker
         finally
         {
             if (parser.ResyncBytes > 0)
-                _log.LogWarning("{Camera}: {Stream} skipped {Bytes} unparseable bytes", Name, path.Stream, parser.ResyncBytes);
+                _log.LogWarning("{Stream} skipped {Bytes} unparseable bytes", path.Stream, parser.ResyncBytes);
         }
     }
 
