@@ -11,15 +11,22 @@ internal static class Program
     public static string DefaultConfigPath =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "ReoBridge", "reobridge.json");
 
+    private static void ShowCrash(Exception? ex) =>
+        MessageBox.Show($"Something went wrong:\n\n{ex?.GetBaseException().Message}\n\n{ex?.StackTrace}", "ReoBridge", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
     [STAThread]
     private static int Main(string[] args)
     {
         ApplicationConfiguration.Initialize();
+        Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+        Application.ThreadException += (_, e) => ShowCrash(e.Exception);
+        AppDomain.CurrentDomain.UnhandledException += (_, e) => ShowCrash(e.ExceptionObject as Exception);
 
         // Elevated helper modes, started by the tray itself through "runas".
         if (args.Length > 0 && args[0] == "--edit-config")
         {
-            Application.Run(new ConfigEditorForm(args.Length > 1 ? args[1] : DefaultConfigPath));
+            try { Application.Run(new ConfigEditorForm(args.Length > 1 ? args[1] : DefaultConfigPath)); }
+            catch (Exception ex) { ShowCrash(ex); return 1; }
             return 0;
         }
         if (args.Length > 0 && args[0] == "--restart-service")
