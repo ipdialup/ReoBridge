@@ -16,7 +16,12 @@
         "Username": "admin",
         "Password": "camera-password",
         "MainStream": "always",
-        "SubStream": "ondemand"
+        "SubStream": "ondemand",
+        "OnvifPort": 8999,
+        "InvertPan": false,
+        "InvertTilt": false,
+        "PtzSpeed": 0,
+        "PtzStepMs": 0
       }
     ]
   }

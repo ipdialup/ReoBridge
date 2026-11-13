@@ -175,13 +175,47 @@ public sealed class BcClient : IAsyncDisposable
         await RequestAsync(new BcMessage { MsgId = BcMsgId.Ping, MsgNum = NextMsgNum() }, timeout.Token);
     }
 
-    /// <summary>Sends an XML command and returns the reply (used for PTZ etc.).</summary>
-    public Task<BcReply> CommandAsync(uint msgId, string bodyXml, CancellationToken ct) =>
+    /// <summary>Sends an XML command (with a channel extension) and returns the reply.</summary>
+    public Task<BcReply> CommandAsync(uint msgId, string? bodyXml, CancellationToken ct) =>
         RequestAsync(new BcMessage
         {
             MsgId = msgId, MsgNum = NextMsgNum(),
-            Payload = EncryptControl(msgId, 0, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<body>\n" + bodyXml + "</body>\n"),
+            Extension = EncryptControl(msgId, 0, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<Extension version=\"1.1\">\n<channelId>0</channelId>\n</Extension>\n"),
+            Payload = bodyXml is null ? [] : EncryptControl(msgId, 0, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<body>\n" + bodyXml + "</body>\n"),
         }, ct);
+
+    /// <summary>
+    /// Starts moving (or stops) the camera. Command: left, right, up, down, leftUp, leftDown,
+    /// rightUp, rightDown, zoomIn, zoomOut or stop. Speed is the camera's scale (1-64).
+    /// </summary>
+    public async Task PtzAsync(string command, int speed, CancellationToken ct)
+    {
+        var reply = await CommandAsync(BcMsgId.PtzControl,
+            "<PtzControl version=\"1.1\">\n<channelId>0</channelId>\n" +
+            $"<speed>{Math.Clamp(speed, 1, 64)}</speed>\n<command>{command}</command>\n</PtzControl>\n", ct);
+        if (reply.Code != 200) throw new BcException($"Camera refused PTZ {command} (code {reply.Code})");
+    }
+
+    /// <summary>Preset positions stored on the camera (id, name).</summary>
+    public async Task<List<(int Id, string Name)>> GetPresetsAsync(CancellationToken ct)
+    {
+        var reply = await CommandAsync(BcMsgId.GetPtzPresets, null, ct);
+        if (reply.Code != 200) throw new BcException($"Camera refused the preset list (code {reply.Code})");
+        return reply.Body?.Descendants("preset")
+            .Select(p => (Id: int.TryParse(p.Element("id")?.Value, out var id) ? id : -1, Name: p.Element("name")?.Value ?? ""))
+            .Where(p => p.Id >= 0)
+            .ToList() ?? [];
+    }
+
+    /// <summary>Moves to (toPos) or saves the current position as (setPos) a preset.</summary>
+    public async Task PresetAsync(int id, bool save, string? name, CancellationToken ct)
+    {
+        string nameXml = save && name is not null ? $"<name>{System.Security.SecurityElement.Escape(name)}</name>\n" : "";
+        var reply = await CommandAsync(BcMsgId.PtzPreset,
+            "<PtzPreset version=\"1.1\">\n<channelId>0</channelId>\n<presetList>\n<preset>\n" +
+            $"<id>{id}</id>\n{nameXml}<command>{(save ? "setPos" : "toPos")}</command>\n</preset>\n</presetList>\n</PtzPreset>\n", ct);
+        if (reply.Code != 200) throw new BcException($"Camera refused preset {id} (code {reply.Code})");
+    }
 
     private static string PreviewXml(bool sub, bool includeType) =>
         "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<body>\n<Preview version=\"1.1\">\n" +

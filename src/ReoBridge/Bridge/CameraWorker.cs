@@ -41,6 +41,20 @@ public sealed class CameraWorker
     public BcEncryption? Encryption { get; private set; }
     public string? Model { get; private set; }
     public int Reconnects { get; private set; }
+    public CameraOptions Options => _opt;
+    /// <summary>False only when the camera says it has no pan/tilt (unknown until the first login counts as yes).</summary>
+    public bool PtzSupported => _ptzMode is null || !_ptzMode.Equals("none", StringComparison.OrdinalIgnoreCase);
+    public string? Serial { get; private set; }
+    public string? Firmware { get; private set; }
+
+    private volatile BcClient? _client;
+    private string? _ptzMode;
+
+    private BcClient Client => _client ?? throw new BcException($"{Name} is not connected");
+
+    public Task PtzAsync(string command, int speed, CancellationToken ct) => Client.PtzAsync(command, speed, ct);
+    public Task<List<(int Id, string Name)>> GetPresetsAsync(CancellationToken ct) => Client.GetPresetsAsync(ct);
+    public Task PresetAsync(int id, bool save, string? name, CancellationToken ct) => Client.PresetAsync(id, save, name, ct);
 
     public async Task RunAsync(CancellationToken ct)
     {
@@ -88,7 +102,12 @@ public sealed class CameraWorker
         await using var client = new BcClient(_opt.Host, _opt.Port, _opt.Username, _opt.Password, _log);
         await client.ConnectAsync(ct);
         Encryption = client.Encryption;
-        Model = client.DeviceInfo?.Descendants().FirstOrDefault(e => e.Name.LocalName is "type" or "model")?.Value;
+        string? Info(string name) => client.DeviceInfo?.Descendants().FirstOrDefault(e => e.Name.LocalName == name)?.Value;
+        Model = Info("type") ?? Info("model");
+        _ptzMode = Info("ptzMode");
+        Serial = Info("serialNumber") ?? Info("uid");
+        Firmware = Info("firmwareVersion") ?? Info("firmVersion");
+        _client = client;
         ConnectedSinceUtc = DateTime.UtcNow;
         State = "connected";
         LastError = null;
@@ -142,6 +161,7 @@ public sealed class CameraWorker
         }
         finally
         {
+            _client = null;
             sessionCts.Cancel();
             foreach (var slot in _slots)
             {

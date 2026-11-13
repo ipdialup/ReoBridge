@@ -59,6 +59,8 @@ public sealed class StatusServer
             host = c.Host,
             state = c.State,
             model = c.Model,
+            onvifPort = c.Options.OnvifPort > 0 ? c.Options.OnvifPort : (int?)null,
+            ptz = c.PtzSupported,
             encryption = c.Encryption?.ToString(),
             connectedSince = c.ConnectedSinceUtc,
             reconnects = c.Reconnects,
@@ -149,6 +151,7 @@ public sealed class StatusServer
             string cls = c.State == "connected" ? "ok" : "bad";
             sb.Append($"<h2>{E(c.Name)} <span class={cls}>{E(c.State)}</span></h2>");
             sb.Append($"<div class=mut>{E(c.Host)} · {E(c.Model)} · {E(c.Encryption)} · reconnects {c.Reconnects}");
+            if (c.Options.OnvifPort > 0) sb.Append($" · ONVIF :{c.Options.OnvifPort}{(c.PtzSupported ? " with PTZ" : "")}");
             if (c.LastError is not null) sb.Append($" · <span class=bad>{E(c.LastError)}</span>");
             sb.Append("</div><table><tr><th>Path</th><th>Video</th><th>fps</th><th>kbit/s</th><th>Audio</th><th>Viewers</th></tr>");
             foreach (var p in c.Paths)

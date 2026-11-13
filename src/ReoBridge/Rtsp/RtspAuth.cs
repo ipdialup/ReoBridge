@@ -54,6 +54,18 @@ public sealed class RtspAuth
         return false;
     }
 
+    /// <summary>ONVIF WS-Security UsernameToken: PasswordDigest = Base64(SHA1(nonce + created + password)) or plain text.</summary>
+    public bool CheckWsse(string user, string password, bool digest, string? nonceB64, string? created)
+    {
+        if (!Enabled) return true;
+        if (!_users.TryGetValue(user, out var real)) return false;
+        if (!digest) return FixedEquals(real, password);
+        byte[] nonce;
+        try { nonce = Convert.FromBase64String(nonceB64 ?? ""); } catch (FormatException) { return false; }
+        var input = nonce.Concat(Encoding.UTF8.GetBytes((created ?? "") + real)).ToArray();
+        return FixedEquals(Convert.ToBase64String(SHA1.HashData(input)), password);
+    }
+
     internal static Dictionary<string, string> ParseParams(string s)
     {
         var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);

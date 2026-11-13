@@ -74,7 +74,9 @@ Logs go to `C:\ProgramData\ReoBridge\logs`.
     "StatusPort": 8555,
     "Cameras": [
       { "Name": "Indoor", "Host": "192.168.1.50", "Username": "admin", "Password": "camera-password",
-        "MainStream": "always", "SubStream": "ondemand" }
+        "MainStream": "always", "SubStream": "ondemand", "OnvifPort": 8999 },
+      { "Name": "Garden", "Host": "192.168.1.51", "Username": "admin", "Password": "camera-password",
+        "OnvifPort": 9001, "InvertTilt": true, "PtzStepMs": 300 }
     ]
   }
 }
@@ -84,6 +86,35 @@ Logs go to `C:\ProgramData\ReoBridge\logs`.
 - **Host:** give the camera a fixed address, for example a DHCP reservation. ReoBridge
   connects to it directly on port 9000; it does not use Reolink's cloud.
 - **MainStream / SubStream:** each takes `always`, `ondemand` or `off`.
+- **Cameras:** add as many as you like. Each needs its own `Name`, which becomes its stream path.
+- **OnvifPort:** turns on an ONVIF service for that camera, so an NVR can find its streams
+  and drive pan/tilt and presets. Each camera needs its own port; `0` or missing means off.
+- **InvertPan / InvertTilt:** flip left/right or up/down for a camera mounted another way up.
+- **PtzSpeed:** the fastest pan/tilt speed sent to the camera, 1–64. `0` lets the NVR choose.
+- **PtzStepMs:** how far one press moves. Every move stops by itself after this many
+  milliseconds, so a click on the NVR's arrow nudges the camera by a fixed step. `0` keeps
+  moving until the NVR says stop.
+
+## ONVIF and pan/tilt
+
+With `OnvifPort` set, point your NVR's ONVIF settings at `host:<OnvifPort>`, using the same
+login as RTSP. It answers device, media and PTZ requests: continuous and relative moves, stop,
+and the camera's own presets.
+
+In Blue Iris, set the camera's ONVIF port, then pick **ONVIF** as the PTZ type in the PTZ
+settings; it does not switch that on by itself. Each PTZ request is logged, which helps when
+tuning `PtzSpeed` and `PtzStepMs`.
+
+## Tray app (Windows)
+
+`ReoBridge.Tray.exe` sits in the notification area and shows whether every camera is
+streaming: green, amber or red, with a pop-up when something changes. Double-click it for a
+status window listing each camera and its streams. On the machine running the service, it can
+also edit the cameras, restart the service and open the logs. To watch another machine, use
+**Change server…**.
+
+Build it with
+`dotnet publish src/ReoBridge.Tray -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o publish-tray`.
 
 The config is read from these places, in order:
 1. `appsettings.json` next to the program.
@@ -105,7 +136,6 @@ also save the raw video to a file, which you can play with `ffplay test.h264`.
 Tested with a Reolink E1 (Wi-Fi, firmware using full AES), recording in Blue Iris.
 
 Planned:
-- ONVIF device and PTZ service
 - Motion events
 - Battery cameras' sleep and wake
 - UID / relay connections
