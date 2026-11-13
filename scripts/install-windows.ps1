@@ -41,6 +41,7 @@ $rtspPort = if ($cfg.ReoBridge.Rtsp.Port) { [int]$cfg.ReoBridge.Rtsp.Port } else
 $statusPort = if ($null -ne $cfg.ReoBridge.StatusPort) { [int]$cfg.ReoBridge.StatusPort } else { 8555 }
 $ports = @($rtspPort)
 if ($statusPort -gt 0) { $ports += $statusPort }
+foreach ($cam in @($cfg.ReoBridge.Cameras)) { if ($cam.OnvifPort -gt 0) { $ports += [int]$cam.OnvifPort } }
 Get-NetFirewallRule -DisplayName 'ReoBridge*' -ErrorAction SilentlyContinue | Remove-NetFirewallRule
 New-NetFirewallRule -DisplayName 'ReoBridge (TCP)' -Direction Inbound -Protocol TCP -LocalPort $ports -Action Allow | Out-Null
 New-NetFirewallRule -DisplayName 'ReoBridge (RTP over UDP)' -Direction Inbound -Program "$InstallDir\ReoBridge.exe" -Protocol UDP -Action Allow | Out-Null

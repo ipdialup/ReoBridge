@@ -11,6 +11,8 @@ public static class BcMsgId
     public const uint VideoStop = 4;
     public const uint PtzControl = 18;
     public const uint PtzPreset = 19;
+    public const uint GetPtzPresets = 190;
+    public const uint Snapshot = 109;
     public const uint Ping = 93;
 }
 

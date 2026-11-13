@@ -58,7 +58,9 @@ public sealed class RtspServer
             control = last;
             path = slash < 0 ? "" : path[..slash];
         }
-        return _paths.FirstOrDefault(p => p.Aliases.Any(a => a.Equals(path, StringComparison.OrdinalIgnoreCase)));
+        // A bare "/" (what some NVRs fall back to) gets the first camera's main stream.
+        if (path.Trim('/').Length == 0) return _paths.FirstOrDefault(p => !p.IsSub) ?? _paths.FirstOrDefault();
+        return _paths.FirstOrDefault(p => p.Aliases.Any(a => a.Equals(path.Trim('/'), StringComparison.OrdinalIgnoreCase)));
     }
 
     private async Task HandleAsync(TcpClient client, CancellationToken serverCt)
@@ -157,12 +159,22 @@ public sealed class RtspServer
             case "DESCRIBE":
             {
                 var path = FindPath(req.Path, out _);
-                if (path is null) return new RtspResponse(404, "Not Found");
+                if (path is null)
+                {
+                    _log.LogWarning("RTSP {Remote}: DESCRIBE for unknown path \"{Path}\" (404)", remote, req.Path);
+                    return new RtspResponse(404, "Not Found");
+                }
                 path.Want(TimeSpan.FromSeconds(30));
                 if (!await path.WaitReadyAsync(TimeSpan.FromSeconds(12), ct))
                     return new RtspResponse(503, "Service Unavailable");
-                // Audio usually follows the first keyframe closely; give it a moment so it is in the SDP.
-                for (int i = 0; i < 10 && path.Audio is null && path.LastFrameUtc > DateTime.UtcNow.AddSeconds(-2); i++)
+                // Audio usually follows the first keyframe within a second or two; wait for it so it is in the
+                // SDP (a client that misses it never gets audio). A stream that has run for a while with no
+                // audio simply has none, so only a fresh stream gets the longer wait.
+                var now = DateTime.UtcNow;
+                var until = now.AddSeconds(1);
+                if (path.FlowingSinceUtc is { } since && since.AddSeconds(4) > until) until = since.AddSeconds(4);
+                if (until > now.AddSeconds(4)) until = now.AddSeconds(4);
+                while (path.Audio is null && DateTime.UtcNow < until && path.LastFrameUtc > DateTime.UtcNow.AddSeconds(-2))
                     await Task.Delay(100, ct);
                 var sdp = Encoding.ASCII.GetBytes(path.BuildSdp(local?.Address.ToString() ?? "0.0.0.0"));
                 string baseUrl = BaseUrl(req, path);
@@ -216,7 +228,8 @@ public sealed class RtspServer
                     var r = session.RtpInfoFor(t);
                     return $"url={baseUrl}/trackID={t};seq={r.Seq};rtptime={r.Timestamp}";
                 }));
-                _log.LogInformation("RTSP {Remote}: PLAY {Path} over {Transport}", remote, session.Path.Name, session.UsesUdp ? "UDP" : "TCP");
+                _log.LogInformation("RTSP {Remote}: PLAY {Path} over {Transport} ({Tracks})", remote, session.Path.Name, session.UsesUdp ? "UDP" : "TCP",
+                    session.Tracks.ContainsKey(1) ? "video + audio" : session.Path.Audio is null ? "video; stream has no audio" : "video only; client did not set up audio");
                 return RtspResponse.Ok().With("Session", $"{session.Id};timeout=60").With("Range", "npt=0.000-").With("RTP-Info", info);
             }
 

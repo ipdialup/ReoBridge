@@ -37,4 +37,19 @@ public sealed class CameraOptions
     public string MainStream { get; set; } = "always";
     /// <summary>always | ondemand | off</summary>
     public string SubStream { get; set; } = "ondemand";
+    /// <summary>ONVIF (device, media and PTZ) port for this camera; 0 = no ONVIF. Each camera needs its own port.</summary>
+    public int OnvifPort { get; set; }
+    /// <summary>Swap left and right for PTZ (camera mounted so pan runs the other way).</summary>
+    public bool InvertPan { get; set; }
+    /// <summary>Swap up and down for PTZ (e.g. a camera mounted upside down on a ceiling).</summary>
+    public bool InvertTilt { get; set; }
+
+    /// <summary>Top pan/tilt speed sent to the camera (1-64). 0 = use whatever speed the NVR asks for.</summary>
+    public int PtzSpeed { get; set; }
+
+    /// <summary>
+    /// How long one press moves the camera, in milliseconds: every move stops by itself after this, so a click
+    /// on the NVR's arrow nudges the camera a fixed step. 0 = move until the NVR says stop.
+    /// </summary>
+    public int PtzStepMs { get; set; }
 }

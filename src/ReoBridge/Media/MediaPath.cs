@@ -69,6 +69,8 @@ public sealed class MediaPath
     public uint AudioTimestamp => _audioTs;
 
     public DateTime? LastFrameUtc { get; private set; }
+    /// <summary>When video started flowing this time round (null while the source is down).</summary>
+    public DateTime? FlowingSinceUtc { get; private set; }
     public double MeasuredFps { get; private set; }
     public double MeasuredKbps { get; private set; }
 
@@ -121,6 +123,7 @@ public sealed class MediaPath
     {
         _lastMicros = null;
         _lastAudioWall = -1;
+        FlowingSinceUtc = null;
         MeasuredFps = 0;
         MeasuredKbps = 0;
     }
@@ -159,6 +162,7 @@ public sealed class MediaPath
 
         AdvanceVideoClock(frame.Microseconds);
         LastFrameUtc = DateTime.UtcNow;
+        FlowingSinceUtc ??= LastFrameUtc;
         UpdateStats(frame.Data.Length);
 
         if (Ready)
