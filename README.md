@@ -150,6 +150,15 @@ Planned:
 
 Reports from other models are very welcome.
 
+## Support
+
+ReoBridge is free and always will be. If it saves you time or money, you can buy me a coffee
+towards keeping it going:
+
+[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/andyr82756)
+
+Bug reports and reports from other hardware help just as much.
+
 ## Credits and licence
 
 The Baichuan protocol details come from the published research in the Neolink project. No
