@@ -96,7 +96,7 @@ public sealed class ConfigEditorForm : Form
 
     private void BuildUi()
     {
-        var split = new SplitContainer { Dock = DockStyle.Fill, SplitterDistance = 200, FixedPanel = FixedPanel.Panel1 };
+        var split = new SplitContainer { Dock = DockStyle.Fill, FixedPanel = FixedPanel.Panel1 };
         _list.DataSource = _cameras;
         _list.SelectedIndexChanged += (_, _) => _grid.SelectedObject = _list.SelectedItem;
         _grid.PropertyValueChanged += (_, _) => { _cameras.ResetBindings(); };
@@ -130,7 +130,12 @@ public sealed class ConfigEditorForm : Form
 
         Controls.Add(split);
         Controls.Add(bottom);
-        if (_cameras.Count > 0) _list.SelectedIndex = 0;
+        // The list only fills from its data source once the window exists, so select and size on Load.
+        Load += (_, _) =>
+        {
+            split.SplitterDistance = Math.Min(220, Math.Max(120, split.Width / 4));
+            if (_cameras.Count > 0) { _list.SelectedIndex = 0; _grid.SelectedObject = _cameras[0]; }
+        };
     }
 
     private static CameraEdit FromJson(JsonObject o)
